@@ -21,13 +21,14 @@ from surprise import KNNBasic
 from surprise import KNNWithMeans
 from surprise import KNNBaseline
 from surprise import SVD
+from surprise import SVDinv
 from surprise import SVDpp
 from surprise import NMF
 from surprise import SlopeOne
 from surprise import CoClustering
 
 # The algorithms to cross-validate
-classes = (SVD, SVDpp, NMF, SlopeOne, KNNBasic, KNNWithMeans, KNNBaseline,
+classes = (SVD, SVDinv, SVDpp, NMF, SlopeOne, KNNBasic, KNNWithMeans, KNNBaseline,
            CoClustering, BaselineOnly, NormalPredictor)
 
 # ugly dict to map algo names and datasets to their markdown links in the table
@@ -35,6 +36,9 @@ stable = 'http://surprise.readthedocs.io/en/stable/'
 LINK = {'SVD': '[{}]({})'.format('SVD',
                                  stable +
                                  'matrix_factorization.html#surprise.prediction_algorithms.matrix_factorization.SVD'),
+        'SVDinv': '[{}]({})'.format('SVDinv',
+                                 stable +
+                                 'matrix_factorization.html#surprise.prediction_algorithms.matrix_factorization.SVDinv'),
         'SVDpp': '[{}]({})'.format('SVD++',
                                    stable +
                                    'matrix_factorization.html#surprise.prediction_algorithms.matrix_factorization.SVDpp'),

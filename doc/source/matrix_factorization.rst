@@ -6,6 +6,9 @@ Matrix Factorization-based algorithms
 .. autoclass:: surprise.prediction_algorithms.matrix_factorization.SVD
     :show-inheritance:
 
+.. autoclass:: surprise.prediction_algorithms.matrix_factorization.SVDinv
+    :show-inheritance:
+
 .. autoclass:: surprise.prediction_algorithms.matrix_factorization.SVDpp
     :show-inheritance:
 

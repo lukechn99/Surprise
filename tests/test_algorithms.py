@@ -14,6 +14,7 @@ from surprise import KNNBasic
 from surprise import KNNWithMeans
 from surprise import KNNBaseline
 from surprise import SVD
+from surprise import SVDinv
 from surprise import SVDpp
 from surprise import NMF
 from surprise import SlopeOne
@@ -33,7 +34,7 @@ def test_unknown_user_or_item(toy_data):
     trainset = toy_data.build_full_trainset()
 
     klasses = (NormalPredictor, BaselineOnly, KNNBasic, KNNWithMeans,
-               KNNBaseline, SVD, SVDpp, NMF, SlopeOne, CoClustering,
+               KNNBaseline, SVD, SVDinv, SVDpp, NMF, SlopeOne, CoClustering,
                KNNWithZScore)
     for klass in klasses:
         algo = klass()
@@ -97,6 +98,7 @@ def test_sanity_checks(u1_ml100k, pkf):
         KNNBaseline: 1.0700718041752253,
         KNNWithZScore: 1.11179436167853,
         SVD: 1.0077323320656948,
+        SVDinv: 1.0,
         SVDpp: 1.00284553561452,
         NMF: 1.0865370266372372,
         SlopeOne: 1.1559939123891685,
@@ -104,7 +106,7 @@ def test_sanity_checks(u1_ml100k, pkf):
     }
 
     for klass, rmse in iteritems(expected_rmse):
-        if klass in (SVD, SVDpp, NMF, CoClustering):
+        if klass in (SVD, SVDinv, SVDpp, NMF, CoClustering):
             algo = klass(random_state=0)
         else:
             algo = klass()

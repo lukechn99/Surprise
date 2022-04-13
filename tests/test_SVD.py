@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from surprise import SVD
+from surprise import SVDinv
 from surprise import SVDpp
 from surprise.model_selection import cross_validate
 
@@ -82,6 +83,19 @@ def test_SVD_parameters(u1_ml100k, pkf):
     rmse_reg_qi = cross_validate(algo, u1_ml100k, ['rmse'], pkf)['test_rmse']
     assert rmse_default != rmse_reg_qi
 
+def test_SVDinv_parameters(u1_ml100k, pkf):
+    """Ensure that all parameters are taken into account."""
+
+    # The baseline against which to compare.
+    algo = SVDinv(n_factors=1, n_epochs=1, random_state=1)
+    rmse_default = cross_validate(algo, u1_ml100k, ['rmse'], pkf)['test_rmse']
+
+    # n_factors
+    algo = SVDinv(n_factors=2, n_epochs=1, random_state=1)
+    rmse_factors = cross_validate(algo, u1_ml100k, ['rmse'], pkf)['test_rmse']
+    assert rmse_default != rmse_factors
+
+    # The rest is OK but just takes too long for now...
 
 def test_SVDpp_parameters(u1_ml100k, pkf):
     """Ensure that all parameters are taken into account."""

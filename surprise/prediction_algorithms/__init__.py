@@ -14,6 +14,7 @@ The available prediction algorithms are:
     knns.KNNWithZScore
     knns.KNNBaseline
     matrix_factorization.SVD
+    matrix_factorization.SVDinv
     matrix_factorization.SVDpp
     matrix_factorization.NMF
     slope_one.SlopeOne
@@ -28,6 +29,7 @@ from .knns import KNNBaseline
 from .knns import KNNWithMeans
 from .knns import KNNWithZScore
 from .matrix_factorization import SVD
+from .matrix_factorization import SVDinv
 from .matrix_factorization import SVDpp
 from .matrix_factorization import NMF
 from .slope_one import SlopeOne
@@ -37,6 +39,6 @@ from .predictions import PredictionImpossible
 from .predictions import Prediction
 
 __all__ = ['AlgoBase', 'NormalPredictor', 'BaselineOnly', 'KNNBasic',
-           'KNNBaseline', 'KNNWithMeans', 'SVD', 'SVDpp', 'NMF', 'SlopeOne',
+           'KNNBaseline', 'KNNWithMeans', 'SVD', 'SVDinv', 'SVDpp', 'NMF', 'SlopeOne',
            'CoClustering', 'PredictionImpossible', 'Prediction',
            'KNNWithZScore']
