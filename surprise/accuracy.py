@@ -13,6 +13,9 @@ Available accuracy metrics:
     fcp
     novelty
     unexpectedness
+    relevance
+    mape
+    topkavg
 """
 
 from __future__ import (absolute_import, division, print_function,
@@ -42,6 +45,51 @@ from six import iteritems
 #     avg_ndcg = np.mean(total_ndcg)
 #     return avg_ndcg
 
+def mape(predictions, verbose=True):
+    return np.mean(_rel_mape(predictions))
+
+def _rel_mape(predictions):
+    '''
+    for a list of predictions, separates users and calculates the MAPE for each user
+    '''
+    mape = {}
+    for (uid, _, true_r, est, _) in predictions:
+        mape_ = float(abs(true_r - est)/true_r)
+        if uid in mape:
+            mape[uid].append(mape_)
+        else:
+            mape[uid] = [mape_]
+    avg_mape = [1 - np.mean(mape[uid]) for uid in mape.keys()]
+    return avg_mape
+
+def topkavg(predictions, verbose=True, k=10):
+    return np.mean(_rel_sumk(predictions, k))
+
+def _rel_sumk(predictions, k):
+    uest = {}
+    for (uid, _, _, est, _) in predictions:
+        if uid in uest:
+            heappush(uest[uid], est)
+        else:
+            uest[uid] = [est]
+    sumk = [np.mean(nlargest(k, uest[uid])) for uid in uest.keys()]
+    return sumk
+
+def relevance(predictions, verbose=True, k=10):
+    # for each user, find their accuracy
+    uidset = list(set([p.uid for p in predictions]))
+    mape = _rel_mape(predictions)
+
+    # find sum score of each user's top k
+    sumk = _rel_sumk(predictions, k)
+
+    if verbose:
+        print(sumk[0])
+
+    # average the relevance over all users
+    return np.mean([m * s for m, s in zip(mape, sumk)])
+
+
 def unexpectedness_aux(user_id, top_k, ratings, uidset, iidset):
     '''
     roughly, we're following the equation -log( p(i,j)/p(i)p(j) ) / log(p(i,j))
@@ -55,7 +103,8 @@ def unexpectedness_aux(user_id, top_k, ratings, uidset, iidset):
     total_pmi = []
 
     # pre-process the stats for items the user has rated
-    user_rated_items = np.array(ratings.index.to_list())[ratings[user_id] > 0]
+    # user_rated_items = np.array(ratings.index.to_list())[ratings[user_id] > 0]
+    user_rated_items = np.array([item for item in iidset if ratings.loc[user_id, item] > 0])
 
     # item : probability(item) map
     pi = {}
@@ -64,13 +113,14 @@ def unexpectedness_aux(user_id, top_k, ratings, uidset, iidset):
     pii = {}
 
     for item_id in user_rated_items:
-        # probability of item i considering all items
-        pi[item_id] = np.count_nonzero(ratings.loc[:,item_id])/ratings.shape[1]
-        indices = []
-        for user_id in uidset:
-            if ratings.loc[user_id,item_id] != 0:
-                indices.append(ratings.loc[user_id,item_id])
-        pii[item_id] = indices
+        # uniform probability of choosing item "i" considering all items
+        if item_id in iidset:
+            pi[item_id] = np.count_nonzero(ratings.loc[:,item_id])/ratings.shape[1]
+            indices = []
+            for user_id in uidset:
+                if ratings.loc[user_id,item_id] != 0:
+                    indices.append(user_id)
+            pii[item_id] = indices
 
     # calculate unexpectedness for each recommended item
     for item in top_k:
@@ -81,19 +131,19 @@ def unexpectedness_aux(user_id, top_k, ratings, uidset, iidset):
         for comp_item_id in user_rated_items:
             # optimize with this later: https://stackoverflow.com/questions/63317109/python-get-column-name-by-non-zero-value-in-row
             # extract item_ids that have nonzero ratings for this user
-            jitems = []
-            for r, name in zip(ratings.loc[:,item_id], ratings.index):
-                if r != 0:
-                    jitems.append(int(name))
-
-            # p_ij = len(set(p_ii[item_id2][0].tolist() + ratings.loc[:,item_id].values.flatten().tolist()))/ratings.shape[1]
-            pij = len(set(pii[comp_item_id][0].tolist()) & set(jitems))/ratings.shape[1]
-            total_pmi.append(-1 * log(max(pij / max((pi[comp_item_id] * pj), 1), 1), 2) / log(max(pij, 1.1), 2))
+            if comp_item_id in iidset:
+                jitems = []
+                for r, name in zip(ratings.loc[:,item_id], ratings.index):
+                    if r != 0:
+                        jitems.append(name)
+                pij = len(set(pii[comp_item_id]) & set(jitems))/ratings.shape[1]
+                unexpectedness_rating = -1 * log(pij / (pi[comp_item_id] * pj), 2) / log(pij, 2)
+                total_pmi.append(unexpectedness_rating)
 
     avg_pmi = np.mean(total_pmi)
     return avg_pmi
 
-def unexpectedness(surprise_predictions, verbose=True, k=50):
+def unexpectedness(surprise_predictions, verbose=True, k=10):
     '''
     We will measure unexpectedness of the top 5 recommendations. 
     To do this, we will take each of the recommendations, and calculate its unexpectedness

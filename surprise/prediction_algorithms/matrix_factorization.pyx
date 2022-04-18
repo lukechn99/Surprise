@@ -349,24 +349,25 @@ class SVDinv(AlgoBase):
         if not self.biased:
             global_mean = 0
 
-        for current_epoch in range(self.n_epochs):
-            if self.verbose:
-                print("Processing epoch {}".format(current_epoch))
-            for u, i, r in trainset.all_ratings():
+        for f in range(self.n_factors):
+            for current_epoch in range(self.n_epochs):
+                if self.verbose:
+                    print("Processing epoch {}".format(current_epoch))
+                for u, i, r in trainset.all_ratings():
 
-                # compute current error
-                dot = 0  # <q_i, p_u>
-                for f in range(self.n_factors):
-                    dot += qi[i, f] * pu[u, f]
-                err = r - (global_mean + bu[u] + bi[i] + dot)
+                    # compute current error
+                    dot = 0  # <q_i, p_u>
+                    for f in range(self.n_factors):
+                        dot += qi[i, f] * pu[u, f]
+                    err = r - (global_mean + bu[u] + bi[i] + dot)
 
-                # update biases
-                if self.biased:
-                    bu[u] += lr_bu * (err - reg_bu * bu[u])
-                    bi[i] += lr_bi * (err - reg_bi * bi[i])
+                    # update biases
+                    if self.biased:
+                        bu[u] += lr_bu * (err - reg_bu * bu[u])
+                        bi[i] += lr_bi * (err - reg_bi * bi[i])
 
-                # update factors
-                for f in range(self.n_factors):
+                    # update factors
+                    
                     puf = pu[u, f]
                     qif = qi[i, f]
                     pu[u, f] += lr_pu * (err * qif - reg_pu * puf)
@@ -384,14 +385,17 @@ class SVDinv(AlgoBase):
 
         known_user = self.trainset.knows_user(u)
         known_item = self.trainset.knows_item(i)
-
+        msg = "user {} and item {} ".format(u, i)
         if self.biased:
+            msg += "biased, "
             est = self.trainset.global_mean
 
             if known_user:
+                msg += "known user, "
                 est += self.bu[u]
 
             if known_item:
+                msg += "known item, "
                 est += self.bi[i]
 
             if known_user and known_item:
@@ -399,10 +403,12 @@ class SVDinv(AlgoBase):
 
         else:
             if known_user and known_item:
+                msg += "known user and item"
                 est = np.dot(self.qi[i], self.pu[u])
             else:
                 raise PredictionImpossible('User and item are unknown.')
-
+        msg += "est: {}".format(est)
+        # print(msg)
         return est
 
 
